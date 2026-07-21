@@ -32,7 +32,8 @@
   nav.days button.active{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
   main{padding:12px 16px 40px;}
   section.day{display:none;}
-  section.day.active{display:block;}
+  section.day.active{display:block; animation:dayIn .2s ease;}
+  @keyframes dayIn{ from{opacity:0; transform:translateX(10px);} to{opacity:1; transform:translateX(0);} }
   .daytitle{margin:6px 0 2px;}
   .daytitle h2{font-size:30px; margin:0; text-transform:uppercase;}
   .daytitle .sub{color:var(--accent); font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:.08em;}
@@ -462,11 +463,33 @@ function init(){
     section.innerHTML = renderDay(day);
     main.appendChild(section);
   });
+  let currentKey = DAYS[0].key;
   function selectDay(key){
+    currentKey = key;
     document.querySelectorAll("nav.days button").forEach(b => b.classList.toggle("active", b.dataset.key===key));
     document.querySelectorAll("section.day").forEach(s => s.classList.toggle("active", s.id==="day-"+key));
+    const activeBtn = nav.querySelector(`button[data-key="${key}"]`);
+    if(activeBtn && activeBtn.scrollIntoView) activeBtn.scrollIntoView({behavior:"smooth", inline:"center", block:"nearest"});
     window.scrollTo({top:0, behavior:"instant"});
   }
+
+  // --- Deslizar para cambiar de día ---
+  let touchStartX=0, touchStartY=0, touchStartT=0;
+  main.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    touchStartX = t.clientX; touchStartY = t.clientY; touchStartT = Date.now();
+  }, {passive:true});
+  main.addEventListener("touchend", (e) => {
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    const dt = Date.now() - touchStartT;
+    if(Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.6 && dt < 700){
+      const idx = DAYS.findIndex(d => d.key === currentKey);
+      const target = dx < 0 ? DAYS[idx+1] : DAYS[idx-1];
+      if(target) selectDay(target.key);
+    }
+  }, {passive:true});
 
   checks = loadChecks();
   applyChecksToDOM();
