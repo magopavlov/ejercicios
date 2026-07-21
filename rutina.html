@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Programa Semanal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14161b; --surface:#1b1f27; --surface2:#242a35; --line:#2c3242;
+    --text:#eceff3; --text-muted:#8892a3; --accent:#ff5b39; --accent-soft:rgba(255,91,57,.16);
+    --joint:#3fd6c6;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  body{padding-bottom:60px;}
+  h1,h2,h3,.display{font-family:'Barlow Condensed',sans-serif; font-weight:700; letter-spacing:.01em;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  header.top{position:sticky; top:0; z-index:30; background:linear-gradient(180deg,var(--bg) 70%, transparent); padding:14px 16px 8px;}
+  header.top .brand{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;}
+  header.top .brand h1{font-size:22px; margin:0; text-transform:uppercase; letter-spacing:.04em;}
+  nav.days{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px;}
+  nav.days::-webkit-scrollbar{display:none;}
+  nav.days button{flex:0 0 auto; background:var(--surface); border:1px solid var(--line); color:var(--text-muted);
+    padding:8px 12px; border-radius:10px; font-family:'Barlow Condensed',sans-serif; font-size:15px;
+    font-weight:600; letter-spacing:.03em; text-transform:uppercase; cursor:pointer;}
+  nav.days button .n{font-family:'IBM Plex Mono',monospace; font-size:10px; opacity:.6; display:block; margin-bottom:1px;}
+  nav.days button.active{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
+  main{padding:12px 16px 40px;}
+  section.day{display:none;}
+  section.day.active{display:block;}
+  .daytitle{margin:6px 0 2px;}
+  .daytitle h2{font-size:30px; margin:0; text-transform:uppercase;}
+  .daytitle .sub{color:var(--accent); font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:.08em;}
+  .block{margin-top:22px;}
+  .block > h3{font-size:19px; margin:0 0 8px; text-transform:uppercase; color:var(--text); border-bottom:1px solid var(--line); padding-bottom:6px;}
+  .block > h3 .cat{color:var(--text-muted); font-weight:500; font-size:13px; font-family:'IBM Plex Mono',monospace; text-transform:none; letter-spacing:0;}
+  ul.plain{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;}
+  ul.plain li{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:9px 12px 9px 10px; font-size:14px; display:flex; align-items:center; gap:10px;}
+  ul.plain li .txt{flex:1; display:flex; justify-content:space-between; gap:10px;}
+  ul.plain li .dur{color:var(--text-muted); font-family:'IBM Plex Mono',monospace; font-size:12px; white-space:nowrap;}
+  ul.plain li.done .txt > span:first-child{color:var(--text-muted); text-decoration:line-through;}
+  .subgroup{margin-top:14px;}
+  .subgroup > .label{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin-bottom:6px; font-family:'IBM Plex Mono',monospace;}
+  .exrow{display:flex; align-items:stretch; gap:8px; margin-bottom:8px;}
+  .exrow.done details.ex{opacity:.55;}
+  .exrow.done .name{text-decoration:line-through;}
+  details.ex{flex:1; background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  details.ex[open]{border-color:#3a4258;}
+  details.ex summary{list-style:none; cursor:pointer; padding:11px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  details.ex summary::-webkit-details-marker{display:none;}
+  details.ex summary .name{font-size:15.5px; font-weight:600;}
+  details.ex summary .right{display:flex; align-items:center; gap:10px; flex:0 0 auto;}
+  details.ex summary .sets{color:var(--accent); font-family:'IBM Plex Mono',monospace; font-size:13px; white-space:nowrap;}
+  details.ex summary .chev{color:var(--text-muted); font-size:12px; transition:transform .2s;}
+  details.ex[open] summary .chev{transform:rotate(180deg);}
+  details.ex .body{padding:0 12px 14px;}
+  details.ex .tech{font-size:13.5px; color:var(--text-muted); line-height:1.5; margin:0;}
+  .checkwrap{flex:0 0 auto; display:flex; align-items:center; justify-content:center; width:44px;}
+  input.check{appearance:none; -webkit-appearance:none; width:26px; height:26px; border-radius:8px; border:2px solid var(--line);
+    background:var(--surface); cursor:pointer; position:relative; flex:0 0 auto;}
+  input.check:checked{background:var(--accent); border-color:var(--accent);}
+  input.check:checked::after{content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#14161b; font-size:16px; font-weight:700;}
+  .progress{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-muted); margin:2px 0 0;}
+  .progress b{color:var(--accent);}
+  .resetbtn{background:none; border:1px solid var(--line); color:var(--text-muted); font-family:'IBM Plex Mono',monospace;
+    font-size:11px; padding:4px 9px; border-radius:7px; cursor:pointer; text-transform:uppercase; letter-spacing:.04em;}
+  .infobox{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px;}
+  .infobox h3{margin:0 0 8px; font-size:18px; text-transform:uppercase;}
+  .infobox ul{margin:0; padding-left:18px; font-size:14px; color:var(--text-muted); line-height:1.6;}
+  .infobox p{font-size:14px; color:var(--text-muted); line-height:1.6; margin:0 0 8px;}
+  .voltable{width:100%; border-collapse:collapse; font-size:13px; margin-top:6px;}
+  .voltable td{padding:5px 4px; border-bottom:1px solid var(--line);}
+  .voltable td:last-child{text-align:right; font-family:'IBM Plex Mono',monospace; color:var(--accent);}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><h1>Programa Semanal</h1></div>
+  <nav class="days" id="dayNav"></nav>
+</header>
+<main id="main"></main>
+
+<script>
+/* ============ Datos (sin diagramas, con checklist) ============ */
+function ex(name, sets, tech){ return {name, sets, tech}; }
+function foot(name, sets, tech){ return {name, sets, tech}; }
+const ST = {}; const SIT = {};
+
+
+const DAYS = [
+{key:"info", label:"Info", num:"", info:true},
+
+{key:"lunes", label:"Lunes", num:"01", sub:"Torso A", sections:[
+  { title:"Entrada en calor", type:"text", dur:"5 min", items:["Bicicleta","Caminata rápida"] },
+  { title:"Movilidad", type:"groups", groups:[{label:"Movilidad", items:[
+    ex("Cat-Camel","×10","En cuatro apoyos, alterná entre arquear la espalda hacia arriba (gato) y hundirla hacia abajo (camello), moviendo desde la columna.","floor",
+      Object.assign({},{pelvisX:90,pelvisY:150,torsoAngle:80,hipL:10,hipR:10,kneeL:95,kneeR:95,shoulderL:5,shoulderR:5,elbowL:5,elbowR:5}),
+      Object.assign({},{pelvisX:90,pelvisY:135,torsoAngle:70,hipL:10,hipR:10,kneeL:95,kneeR:95,shoulderL:5,shoulderR:5,elbowL:5,elbowR:5})),
+    ex("Rotaciones torácicas","×10 por lado","De rodillas o en cuatro apoyos, llevá una mano a la nuca y rotá el torso abriendo el codo hacia arriba, siguiendo el movimiento con la mirada.","floor",
+      {pelvisX:90,pelvisY:150,torsoAngle:80,hipL:10,hipR:10,kneeL:95,kneeR:95,shoulderL:5,shoulderR:5,elbowL:5,elbowR:5},
+      {pelvisX:90,pelvisY:150,torsoAngle:80,hipL:10,hipR:10,kneeL:95,kneeR:95,shoulderL:5,shoulderR:5,shoulderR2:0,elbowL:5,elbowR:150}),
+    ex("Wall Slides","×10","Espalda contra la pared, brazos en 'W', deslizá los brazos hacia arriba manteniendo contacto con la pared y bajá controlando.","stand",
+      Object.assign({},ST,{shoulderL:90,shoulderR:90,elbowL:100,elbowR:100},{prop:"wall"}),
+      Object.assign({},ST,{shoulderL:165,shoulderR:165,elbowL:20,elbowR:20},{prop:"wall"})),
+    ex("Band Pull Apart","×15","De pie, con una banda entre las manos a la altura del pecho, separá los brazos hacia los costados juntando los omóplatos.","stand",
+      Object.assign({},ST,{shoulderL:80,shoulderR:80,elbowL:5,elbowR:5}),
+      Object.assign({},ST,{shoulderL:80,shoulderR:80,elbowL:5,elbowR:5,hipL:0})),
+    ex("Shoulder CARs","×5","De pie, hacé círculos completos y lentos con el brazo, llevándolo por el máximo rango posible en cada dirección.","stand",
+      Object.assign({},ST,{shoulderL:10,shoulderR:10}),
+      Object.assign({},ST,{shoulderL:170,shoulderR:10})),
+    ex("Círculos de hombros","×15","De pie, elevá y rotá ambos hombros describiendo un círculo, adelante o atrás.","stand",
+      Object.assign({},ST,{}),
+      Object.assign({},ST,{pelvisY:186}))
+  ]}]},
+  { title:"Hipertrofia", type:"groups", groups:[
+    { label:"Pecho", items:[
+      ex("Press en máquina","3×10-12","Sentado con la espalda apoyada, agarrá las manijas a la altura del pecho y empujá hasta extender los brazos sin trabar los codos. Volvé controlando el descenso.","stand",
+        Object.assign({},SIT,{shoulderL:80,shoulderR:80,elbowL:110,elbowR:110}),
+        Object.assign({},SIT,{shoulderL:80,shoulderR:80,elbowL:10,elbowR:10})),
+      ex("Press inclinado con mancuernas","3×10","Acostado en banco a 30-45°, bajá las mancuernas a los lados del pecho y empujá hacia arriba y ligeramente hacia adentro.","stand",
+        Object.assign({},SIT,{torsoAngle:-15,shoulderL:75,shoulderR:75,elbowL:100,elbowR:100},{prop:"dumbbell"}),
+        Object.assign({},SIT,{torsoAngle:-15,shoulderL:100,shoulderR:100,elbowL:15,elbowR:15},{prop:"dumbbell"}))
+    ]},
+    { label:"Espalda", items:[
+      ex("Remo sentado en polea","3×10-12","Sentado, tirá de la barra hacia el abdomen llevando los codos atrás y juntando los omóplatos, sin balancear el torso.","stand",
+        Object.assign({},SIT,{shoulderL:70,shoulderR:70,elbowL:10,elbowR:10}),
+        Object.assign({},SIT,{shoulderL:0,shoulderR:0,elbowL:100,elbowR:100})),
+      ex("Jalón al pecho agarre neutro","3×10-12","De pie o sentado, tirá de la barra hacia la parte alta del pecho llevando los codos hacia abajo y atrás.","stand",
+        Object.assign({},SIT,{shoulderL:170,shoulderR:170,elbowL:10,elbowR:10}),
+        Object.assign({},SIT,{shoulderL:15,shoulderR:15,elbowL:90,elbowR:90}))
+    ]},
+    { label:"Hombros", items:[
+      ex("Elevaciones laterales","3×15","Con mancuernas a los costados, elevá los brazos hasta la altura de los hombros con un leve quiebre en el codo, sin usar impulso.","stand",
+        Object.assign({},ST,{shoulderL:10,shoulderR:10,elbowL:10,elbowR:10},{prop:"dumbbell"}),
+        Object.assign({},ST,{shoulderL:85,shoulderR:85,elbowL:15,elbowR:15},{prop:"dumbbell"})),
+      ex("Face Pull","3×15","Tirá de la cuerda hacia la cara separando las manos, llevando los codos altos y atrás.","stand",
+        Object.assign({},ST,{shoulderL:95,shoulderR:95,elbowL:10,elbowR:10}),
+        Object.assign({},ST,{shoulderL:75,shoulderR:75,elbowL:120,elbowR:120}))
+    ]},
+    { label:"Brazos", items:[
+      ex("Curl con mancuerna","3×12","Con el brazo pegado al torso, flexioná el codo llevando la mancuerna hacia el hombro sin balancear el cuerpo.","stand",
+        Object.assign({},ST,{shoulderL:10,shoulderR:10,elbowL:5,elbowR:5},{prop:"dumbbell"}),
+        Object.assign({},ST,{shoulderL:10,shoulderR:10,elbowL:135,elbowR:135},{prop:"dumbbell"})),
+      ex("Tríceps en polea","3×12","Con los codos fijos junto al torso, extendé los antebrazos hacia abajo hasta estirar completamente.","stand",
+        Object.assign({},ST,{shoulderL:15,shoulderR:15,elbowL:100,elbowR:100}),
+        Object.assign({},ST,{shoulderL:15,shoulderR:15,elbowL:5,elbowR:5}))
+    ]}
+  ]},
+  { title:"Cardio", type:"text", dur:"20 min", items:["Zona 2"] },
+  { title:"Stretching", type:"groups", groups:[{label:"Stretching", items:[
+    ex("Pectoral","30s","De pie junto a una pared o marco, apoyá el antebrazo y girá el torso hacia el lado contrario hasta sentir el estiramiento en el pecho.","stand",
+      Object.assign({},ST,{shoulderL:90,shoulderR:10,elbowL:100,elbowR:5},{prop:"wall"}),
+      Object.assign({},ST,{shoulderL:90,shoulderR:10,elbowL:100,elbowR:5,torsoAngle:-10},{prop:"wall"})),
+    ex("Dorsal","30s","De pie, estirá los brazos hacia arriba y llevalos levemente hacia atrás sintiendo el estiramiento en la espalda alta.","stand",
+      Object.assign({},ST,{shoulderL:10,shoulderR:10,elbowL:5,elbowR:5}),
+      Object.assign({},ST,{shoulderL:175,shoulderR:175,elbowL:5,elbowR:5,torsoAngle:-8})),
+    ex("Trapecio","30s","Sentado o de pie, inclinná suavemente la cabeza hacia un costado ayudándote con la mano, sin forzar el cuello.","stand",
+      Object.assign({},ST,{}), Object.assign({},ST,{pelvisY:189})),
+    ex("Bíceps","30s","De pie, llevá el brazo extendido hacia atrás con la palma abierta hasta sentir el estiramiento en la parte frontal del brazo.","stand",
+      Object.assign({},ST,{shoulderL:10,shoulderR:10,elbowL:5,elbowR:5}),
+      Object.assign({},ST,{shoulderL:-55,shoulderR:10,elbowL:0,elbowR:5})),
+    ex("Tríceps","30s","De pie, llevá una mano detrás de la nuca con el codo apuntando al techo y usá la otra mano para presionar suavemente el codo.","stand",
+      Object.assign({},ST,{shoulderL:10,shoulderR:10,elbowL:5,elbowR:5}),
+      Object.assign({},ST,{shoulderL:175,shoulderR:100,elbowL:15,elbowR:130}))
+  ]}]}
+]},
+
+{key:"martes", label:"Martes", num:"02", sub:"Piernas A", sections:[
+  { title:"Entrada en calor", type:"text", dur:"5 min", items:["Bicicleta"] },
+  { title:"Movilidad", type:"groups", groups:[{label:"Movilidad", items:[
+    ex("90/90 Hip Switch","×10","Sentado en el piso con ambas piernas flexionadas a 90°, rotá las caderas para llevar las rodillas de un lado al otro.","floor",
+      {pelvisX:170,pelvisY:150,torsoAngle:60,hipL:170,hipR:60,kneeL:95,kneeR:95,shoulderL:-70,shoulderR:-30,elbowL:15,elbowR:15},
+      {pelvisX:170,pelvisY:150,torsoAngle:60,hipL:60,hipR:170,kneeL:95,kneeR:95,shoulderL:-30,shoulderR:-70,elbowL:15,elbowR:15}),
+    ex("Hip CARs","×5 por lado","De pie sosteniéndote de algo, llevá la rodilla al frente, luego hacia afuera y atrás, describiendo un círculo completo con la cadera.","stand",
+      Object.assign({},ST,{hipL:80,kneeL:95}), Object.assign({},ST,{hipL:-60,kneeL:15})),
+    ex("Balanceo frontal","×15","De pie, con apoyo, balanceá una pierna hacia adelante y atrás como un péndulo, manteniendo el torso estable.","stand",
+      Object.assign({},ST,{hipL:60,kneeL:10}), Object.assign({},ST,{hipL:-40,kneeL:10})),
+    ex("Balanceo lateral","×15","De pie con apoyo, balanceá una pierna hacia el costado y volvé al centro, manteniendo la cadera estable (movimiento aproximado en el dibujo).","stand",
+      Object.assign({},ST,{hipL:40,kneeL:10}), Object.assign({},ST,{hipL:0,kneeL:10})),
+    ex("Knee to Wall","×12","Con el pie a unos centímetros de una pared, llevá la rodilla hacia la pared sin despegar el talón del piso.","stand",
+      Object.assign({},ST,{hipL:20,kneeL:30},{prop:"wall"}), Object.assign({},ST,{hipL:45,kneeL:70},{prop:"wall"})),
+    ex("Puente de glúteos","×15","Acostado boca arriba con las rodillas flexionadas, elevá la cadera apretando los glúteos y bajá controlando.","floor",
+      {pelvisX:170,pelvisY:170,torsoAngle:90,hipL:160,hipR:160,kneeL:90,kneeR:90,shoulderL:-90,shoulderR:-90,elbowL:0,elbowR:0},
+      {pelvisX:170,pelvisY:145,torsoAngle:90,hipL:160,hipR:160,kneeL:90,kneeR:90,shoulderL:-90,shoulderR:-90,elbowL:0,elbowR:0})
+  ]}]},
+  { title:"Hipertrofia", type:"groups", groups:[{label:"Piernas", items:[
+    ex("Prensa","3×12","Pies apoyados al ancho de hombros, bajá la plataforma controlando hasta 90° de rodilla y empujá sin trabar las rodillas.","stand",
+      Object.assign({},ST,{pelvisX:70,torsoAngle:-20,hipL:110,hipR:110,kneeL:120,kneeR:120,pelvisY:175}),
+      Object.assign({},ST,{pelvisX:70,torsoAngle:-20,hipL:90,hipR:90,kneeL:15,kneeR:15,pelvisY:175})),
+    ex("Hip Thrust","3×12","Con la espalda apoyada en el banco y los pies firmes, empujá la cadera hacia arriba apretando los glúteos en el tope.","floor",
+      {pelvisX:170,pelvisY:170,torsoAngle:90,hipL:160,hipR:160,kneeL:90,kneeR:90,shoulderL:-90,shoulderR:-90,elbowL:0,elbowR:0},
+      {pelvisX:170,pelvisY:142,torsoAngle:90,hipL:160,hipR:160,kneeL:90,kneeR:90,shoulderL:-90,shoulderR:-90,elbowL:0,elbowR:0}),
+    ex("Curl femoral","3×12","Acostado o sentado en la máquina, flexioná las rodillas llevando el talón hacia los glúteos.","stand",
+      Object.assign({},SIT,{pelvisX:70,kneeL:15,kneeR:15}), Object.assign({},SIT,{pelvisX:70,kneeL:110,kneeR:110})),
+    ex("Sentadilla Goblet","3×10","Sostené una mancuerna contra el pecho y bajá entre las piernas manteniendo el torso erguido y las rodillas alineadas con los pies.","stand",
+      Object.assign({},ST,{shoulderL:70,shoulderR:70,elbowL:120,elbowR:120,torsoAngle:5},{prop:"dumbbell"}),
+      Object.assign({},ST,{hipL:95,hipR:95,kneeL:115,kneeR:115,pelvisY:265,torsoAngle:15,shoulderL:70,shoulderR:70,elbowL:120,elbowR:120},{prop:"dumbbell"})),
+    ex("Gemelos sentado","4×15","Con las rodillas flexionadas a 90°, empujá el peso elevando los talones y bajá controlando el estiramiento.","stand",
+      Object.assign({},SIT,{kneeL:85,kneeR:85}), Object.assign({},SIT,{kneeL:95,kneeR:95}))
+  ]}]},
+  { title:"Core", type:"groups", groups:[{label:"Core", items:[
+    ex("Pallof Press","3×12","De pie, con la polea a la altura del pecho, empujá el mango al frente resistiendo la rotación del torso.","stand",
+      Object.assign({},ST,{shoulderL:70,shoulderR:70,elbowL:110,elbowR:110}),
+      Object.assign({},ST,{shoulderL:70,shoulderR:70,elbowL:10,elbowR:10})),
+    ex("Bird Dog","3×10","En cuatro apoyos, extendé brazo y pierna contrarios manteniendo la espalda neutra, sin rotar la cadera.","floor",
+      {pelvisX:140,pelvisY:150,torsoAngle:85,hipL:5,hipR:5,kneeL:95,kneeR:95,shoulderL:5,shoulderR:5,elbowL:5,elbowR:5},
+      {pelvisX:140,pelvisY:150,torsoAngle:85,hipL:-70,hipR:5,kneeL:5,kneeR:95,shoulderL:5,shoulderR:-70,elbowL:5,elbowR:5})
+  ]}]},
+  { title:"Stretching", type:"groups", groups:[{label:"Stretching", items:[
+    ex("Cuádriceps","30s","De pie, tomate el tobillo por detrás y llevá el talón hacia el glúteo manteniendo las rodillas juntas.","stand",
+      Object.assign({},ST,{}), Object.assign({},ST,{hipL:-20,kneeL:135})),
+    ex("Isquios","30s","Con el talón apoyado sobre un soporte bajo y la pierna extendida, inclinná el torso hacia adelante desde la cadera.","stand",
+      Object.assign({},ST,{}), Object.assign({},ST,{hipL:65,kneeL:8,torsoAngle:45})),
+    ex("Glúteos","30s","De pie o sentado, cruzá el tobillo sobre la rodilla contraria e inclinná el torso levemente hacia adelante.","stand",
+      Object.assign({},ST,{}), Object.assign({},ST,{hipL:75,kneeL:100,torsoAngle:35})),
+    ex("Piriforme","30s","Sentado, cruzá una pierna sobre la otra y girá el torso suavemente hacia el lado de la pierna cruzada.","floor",
+      {pelvisX:170,pelvisY:150,torsoAngle:60,hipL:170,hipR:170,kneeL:95,kneeR:95,shoulderL:-30,shoulderR:-30,elbowL:15,elbowR:15},
+      {pelvisX:170,pelvisY:150,torsoAngle:75,hipL:170,hipR:130,kneeL:95,kneeR:60,shoulderL:-10,shoulderR:-50,elbowL:15,elbowR:15}),
+    ex("Flexor de cadera","30s","En posición de estocada con la rodilla de atrás apoyada en el piso, empujá la cadera hacia adelante.","stand",
+      Object.assign({},ST,{hipL:60,kneeL:90,hipR:-40,kneeR:120,pelvisY:210}),
+      Object.assign({},ST,{hipL:60,kneeL:90,hipR:-50,kneeR:120,pelvisY:215,torsoAngle:5})),
+    ex("Gemelos","30s","De pie frente a una pared, apoyá las manos y llevá una pierna atrás estirada empujando el talón contra el piso.","stand",
+      Object.assign({},ST,{hipR:0,kneeR:5},{prop:"wall"}), Object.assign({},ST,{hipL:35,kneeL:5,hipR:-25,kneeR:5},{prop:"wall"})),
+    ex("Sóleo","30s","Igual que el estiramiento de gemelos pero con la rodilla de atrás levemente flexionada.","stand",
+      Object.assign({},ST,{hipR:0,kneeR:5},{prop:"wall"}), Object.assign({},ST,{hipL:30,kneeL:35,hipR:-15,kneeR:5},{prop:"wall"}))
+  ]}]}
+]},
+
+{key:"miercoles", label:"Miércoles", num:"03", sub:"Cardio + Movilidad + Flexibilidad", sections:[
+  { title:"Cardio", type:"text", dur:"45 min", items:["Bicicleta, caminata rápida o elíptica (Zona 2)"] },
+  { title:"Movilidad", type:"text", items:["Cat-Camel ×10 — ver Lunes","Rotaciones torácicas ×10 — ver Lunes","90/90 ×10 — ver Martes","Hip CARs ×5 — ver Martes","Shoulder CARs ×5 — ver Lunes","Wall Slides ×10 — ver Lunes","Knee to Wall ×12 — ver Martes","World's Greatest Stretch 6 por lado — ver Sábado","Couch Stretch 2×30s — ver Sábado"] },
+  { title:"Extra del día", type:"groups", groups:[{label:"Movilidad", items:[
+    ex("Sentadilla profunda asistida","3×30s","Sostenido de un soporte, bajá a sentadilla completa y quedate ahí relajando la cadera y los tobillos.","stand",
+      Object.assign({},ST,{}), Object.assign({},ST,{hipL:100,hipR:100,kneeL:130,kneeR:130,pelvisY:290,torsoAngle:10}))
+  ]}]},
+  { title:"Stretching completo", type:"text", items:["Pectorales","Dorsales","Deltoides","Trapecios","Flexores de cadera","Aductores","Glúteos","Piriforme","Isquios","Cuádriceps","Gemelos","Sóleo"], note:"30-45s cada uno — diagramas en Lunes, Martes y Sábado" }
+]},
+
+{key:"jueves", label:"Jueves", num:"04", sub:"Torso B", sections:[
+  { title:"Movilidad", type:"text", items:["Cat-Camel ×10 — ver Lunes","Rotaciones torácicas ×10 — ver Lunes","Wall Slides ×10 — ver Lunes","Band Pull Apart ×15 — ver Lunes","Shoulder CARs ×5 — ver Lunes"] },
+  { title:"Hipertrofia", type:"groups", groups:[{label:"Torso", items:[
+    ex("Press inclinado en máquina","3×10","Sentado con el respaldo inclinado, empujá las manijas hacia arriba y adelante sin trabar los codos.","stand",
+      Object.assign({},SIT,{torsoAngle:-10,shoulderL:95,shoulderR:95,elbowL:110,elbowR:110}),
+      Object.assign({},SIT,{torsoAngle:-10,shoulderL:95,shoulderR:95,elbowL:10,elbowR:10})),
+    ex("Remo pecho apoyado","3×10","Con el pecho apoyado en el respaldo, tirá de las manijas llevando los codos atrás y juntando los omóplatos.","stand",
+      Object.assign({},SIT,{pelvisX:80,torsoAngle:55,shoulderL:90,shoulderR:90,elbowL:10,elbowR:10}),
+      Object.assign({},SIT,{pelvisX:80,torsoAngle:55,shoulderL:20,shoulderR:20,elbowL:100,elbowR:100})),
+    ex("Jalón cerrado","3×12","Con agarre estrecho, tirá de la barra hacia el pecho llevando los codos pegados al cuerpo.","stand",
+      Object.assign({},SIT,{shoulderL:165,shoulderR:165,elbowL:10,elbowR:10}),
+      Object.assign({},SIT,{shoulderL:10,shoulderR:10,elbowL:100,elbowR:100})),
+    ex("Pec Deck","3×15","Sentado, juntá los brazos al frente del pecho con un leve quiebre en el codo, controlando la vuelta.","stand",
+      Object.assign({},SIT,{shoulderL:85,shoulderR:85,elbowL:80,elbowR:80}),
+      Object.assign({},SIT,{shoulderL:75,shoulderR:75,elbowL:130,elbowR:130})),
+    ex("Elevaciones laterales","3×15","Con mancuernas a los costados, elevá los brazos hasta la altura de los hombros sin usar impulso.","stand",
+      Object.assign({},ST,{shoulderL:10,shoulderR:10,elbowL:10,elbowR:10},{prop:"dumbbell"}),
+      Object.assign({},ST,{shoulderL:85,shoulderR:85,elbowL:15,elbowR:15},{prop:"dumbbell"})),
+    ex("Curl martillo","3×12","Con agarre neutro (palmas enfrentadas), flexioná el codo sin rotar la muñeca.","stand",
+      Object.assign({},ST,{shoulderL:10,shoulderR:10,elbowL:5,elbowR:5},{prop:"dumbbell"}),
+      Object.assign({},ST,{shoulderL:10,shoulderR:10,elbowL:135,elbowR:135},{prop:"dumbbell"})),
+    ex("Tríceps cuerda","3×12","Con la cuerda en la polea alta, extendé los codos separando las manos al final del recorrido.","stand",
+      Object.assign({},ST,{shoulderL:20,shoulderR:20,elbowL:100,elbowR:100}),
+      Object.assign({},ST,{shoulderL:20,shoulderR:20,elbowL:5,elbowR:5}))
+  ]}]},
+  { title:"Cardio", type:"text", dur:"20 min", items:["Zona 2"] },
+  { title:"Stretching", type:"text", items:["Pectoral · 30s — ver Lunes","Dorsal · 30s — ver Lunes","Trapecio · 30s — ver Lunes","Bíceps · 30s — ver Lunes","Tríceps · 30s — ver Lunes"] }
+]},
+
+{key:"viernes", label:"Viernes", num:"05", sub:"Piernas B", sections:[
+  { title:"Movilidad", type:"text", items:["90/90 ×10 — ver Martes","Hip CARs ×5 — ver Martes","Knee to Wall ×12 — ver Martes","Puente de glúteos ×15 — ver Martes","Sentadilla profunda asistida 30s — ver Miércoles"] },
+  { title:"Hipertrofia", type:"groups", groups:[{label:"Piernas", items:[
+    ex("Peso muerto rumano con mancuernas","3×10","Con las rodillas semiflexionadas, bajá las mancuernas pegadas a las piernas manteniendo la espalda neutra hasta sentir el estiramiento en isquios.","stand",
+      Object.assign({},ST,{hipL:0,hipR:0,kneeL:8,kneeR:8,shoulderL:0,shoulderR:0,elbowL:0,elbowR:0},{prop:"dumbbell"}),
+      Object.assign({},ST,{torsoAngle:65,hipL:5,hipR:5,kneeL:12,kneeR:12,shoulderL:0,shoulderR:0,elbowL:0,elbowR:0},{prop:"dumbbell"})),
+    ex("Extensión de cuádriceps","3×12","Sentado en la máquina, extendé las rodillas hasta casi trabarlas y bajá controlando.","stand",
+      Object.assign({},SIT,{pelvisX:70,kneeL:90,kneeR:90}), Object.assign({},SIT,{pelvisX:70,kneeL:10,kneeR:10})),
+    ex("Curl femoral","3×12","Acostado o sentado en la máquina, flexioná las rodillas llevando el talón hacia los glúteos.","stand",
+      Object.assign({},SIT,{pelvisX:70,kneeL:15,kneeR:15}), Object.assign({},SIT,{pelvisX:70,kneeL:110,kneeR:110})),
+    ex("Step Up","3×10 por pierna","Subí a un cajón o banco con una pierna, empujando con el talón hasta extender la cadera, y bajá controlando.","stand",
+      Object.assign({},ST,{hipL:40,kneeL:95,hipR:0,kneeR:10,pelvisY:205}),
+      Object.assign({},ST,{hipL:0,kneeL:8,hipR:65,kneeR:100,pelvisY:172})),
+    ex("Abducción de cadera","3×15","Sentado o de pie con banda, separá la pierna hacia afuera sin rotar el torso (movimiento lateral, aproximado en el dibujo).","stand",
+      Object.assign({},ST,{},{prop:"band-knee"}), Object.assign({},ST,{hipL:-25,kneeL:8},{prop:"band-knee"})),
+    ex("Gemelos de pie","4×15","De pie con las piernas extendidas, elevá los talones lo más alto posible y bajá controlando el estiramiento.","stand",
+      Object.assign({},ST,{}), Object.assign({},ST,{pelvisY:181,kneeL:2,kneeR:2}))
+  ]}]},
+  { title:"Core", type:"groups", groups:[{label:"Core", items:[
+    ex("Dead Bug","3×12","Acostado boca arriba, bajá alternadamente brazo y pierna opuestos sin despegar la zona lumbar del piso.","floor",
+      {pelvisX:170,pelvisY:150,torsoAngle:90,hipL:180,hipR:180,kneeL:90,kneeR:90,shoulderL:180,shoulderR:180,elbowL:10,elbowR:10},
+      {pelvisX:170,pelvisY:150,torsoAngle:90,hipL:105,hipR:180,kneeL:10,kneeR:90,shoulderL:130,shoulderR:180,elbowL:5,elbowR:10}),
+    ex("Plancha","3×20-30s","Apoyado en antebrazos y puntas de pie, mantené el cuerpo alineado sin dejar caer la cadera. Solo si no genera molestias.","floor",
+      {pelvisX:150,pelvisY:150,torsoAngle:45,hipL:60,hipR:60,kneeL:80,kneeR:80,shoulderL:40,shoulderR:40,elbowL:90,elbowR:90},
+      {pelvisX:170,pelvisY:150,torsoAngle:90,hipL:-90,hipR:-90,kneeL:5,kneeR:5,shoulderL:30,shoulderR:30,elbowL:85,elbowR:85})
+  ]}]},
+  { title:"Stretching", type:"text", items:["Cuádriceps · 30s — ver Martes","Isquios · 30s — ver Martes","Glúteos · 30s — ver Martes","Piriforme · 30s — ver Martes","Flexor de cadera · 30s — ver Martes","Gemelos · 30s — ver Martes","Sóleo · 30s — ver Martes"] }
+]},
+
+{key:"sabado", label:"Sábado", num:"06", sub:"Cardio + Prehabilitación", sections:[
+  { title:"Cardio", type:"text", items:["60 min caminata rápida","o 45 min bicicleta"] },
+  { title:"Movilidad", type:"groups", groups:[{label:"Movilidad", items:[
+    ex("World's Greatest Stretch","×6 por lado","Desde estocada larga, apoyá la mano de adentro en el piso y rotá el torso llevando el otro brazo al techo.","stand",
+      Object.assign({},ST,{hipL:65,kneeL:95,hipR:-45,kneeR:15,pelvisY:225,torsoAngle:35,shoulderL:-60,shoulderR:10,elbowL:5,elbowR:5}),
+      Object.assign({},ST,{hipL:65,kneeL:95,hipR:-45,kneeR:15,pelvisY:225,torsoAngle:20,shoulderL:-60,shoulderR:170,elbowL:5,elbowR:5})),
+    ex("Couch Stretch","2×30s","De rodillas frente a un sofá o pared con el pie de atrás apoyado en él, empujá la cadera hacia adelante.","stand",
+      Object.assign({},ST,{hipL:60,kneeL:90,hipR:-30,kneeR:130,pelvisY:215},{prop:"wall"}),
+      Object.assign({},ST,{hipL:60,kneeL:90,hipR:-45,kneeR:135,pelvisY:222,torsoAngle:5},{prop:"wall"}))
+  ]}]},
+  { title:"Fortalecimiento de pies", type:"groups", groups:[{label:"Pies", items:[
+    foot("Short Foot (Doming)","3×10 (5s)","Sentado o de pie, acortá el pie llevando la base de los dedos hacia el talón sin curvar los dedos.",{arch:0},{arch:1}),
+    foot("Toe Yoga","3×10","Levantá solo el dedo gordo manteniendo los demás apoyados, y luego invertí el movimiento.",{toe:0},{toe:0.7}),
+    foot("Separación de dedos","3×10","Separá los dedos del pie lo más posible y mantené unos segundos.",{spread:0},{spread:1}),
+    foot("Arrugar una toalla","3 series","Con el pie sobre una toalla en el piso, arrugala hacia vos usando solo los dedos.",{arch:0.15},{arch:0.8}),
+    foot("Recoger canicas o lápices","2 min","Con los dedos del pie, recogé objetos pequeños del piso y movelos a otro punto.",{spread:0.2,ball:0.15},{spread:0.7,ball:0.7}),
+    foot("Elevaciones de tibial anterior","3×15","Sentado o de pie, elevá la punta del pie manteniendo el talón apoyado.",{toe:0},{toe:1}),
+    foot("Elevaciones de talón lentas","3×15","De pie, subí los talones lentamente y bajá aún más lento, controlando cada fase.",{lift:0},{lift:1}),
+    ex("Equilibrio en un pie","3×30s","Parate sobre un pie manteniendo la postura estable, con la mirada al frente.","stand",
+      Object.assign({},ST,{hipL:20,kneeL:50}), Object.assign({},ST,{hipL:25,kneeL:55})),
+    ex("Caminata en talones","20 m","Caminá apoyando solo los talones, con la punta del pie elevada.","stand",
+      Object.assign({},ST,{hipL:35,kneeL:8,hipR:-25,kneeR:8}), Object.assign({},ST,{hipL:-25,kneeL:8,hipR:35,kneeR:8})),
+    ex("Caminata en puntas","20 m","Caminá apoyando solo la punta de los pies.","stand",
+      Object.assign({},ST,{hipL:30,kneeL:8,hipR:-20,kneeR:8,pelvisY:184}), Object.assign({},ST,{hipL:-20,kneeL:8,hipR:30,kneeR:8,pelvisY:184})),
+    ex("Caminata sobre borde externo","20 m","Caminá apoyando el borde externo del pie, sin dejar caer el arco.","stand",
+      Object.assign({},ST,{hipL:25,kneeL:8,hipR:-15,kneeR:8}), Object.assign({},ST,{hipL:-15,kneeL:8,hipR:25,kneeR:8})),
+    ex("Marcha con rodillas altas","20 m","Caminá elevando las rodillas a la altura de la cadera de forma alternada.","stand",
+      Object.assign({},ST,{hipL:90,kneeL:100,hipR:-15,kneeR:10}), Object.assign({},ST,{hipL:-15,kneeL:10,hipR:90,kneeR:100})),
+    foot("Liberación plantar con pelota","2 min por pie","Apoyá el pie sobre una pelota y rodala aplicando presión en distintos puntos de la planta.",{arch:0.4,ball:0.15},{arch:0.4,ball:0.8})
+  ]}]},
+  { title:"Fortalecimiento de cadera", type:"groups", groups:[{label:"Cadera", items:[
+    ex("Monster Walk","3×15 pasos","Con banda elástica en los tobillos, dá pasos cortos hacia los costados manteniendo tensión en la banda (movimiento lateral, aproximado en el dibujo).","stand",
+      Object.assign({},ST,{hipL:15,hipR:-15},{prop:"band-ankle"}), Object.assign({},ST,{hipL:-15,hipR:15},{prop:"band-ankle"})),
+    ex("Caminata lateral con banda","3×15 pasos","Con banda sobre las rodillas, en semi sentadilla, dá pasos laterales manteniendo tensión constante.","stand",
+      Object.assign({},ST,{pelvisX:85,hipL:70,hipR:70,kneeL:20,kneeR:20,pelvisY:210},{prop:"band-knee"}),
+      Object.assign({},ST,{pelvisX:85,hipL:55,hipR:85,kneeL:20,kneeR:20,pelvisY:210},{prop:"band-knee"})),
+    ex("Clamshell","3×15","Acostado de costado con rodillas flexionadas, separá la rodilla superior manteniendo los pies juntos.","floor",
+      {pelvisX:170,pelvisY:150,torsoAngle:90,hipL:150,hipR:150,kneeL:90,kneeR:90,shoulderL:-90,shoulderR:-90,elbowL:80,elbowR:0},
+      {pelvisX:170,pelvisY:150,torsoAngle:90,hipL:150,hipR:120,kneeL:90,kneeR:90,shoulderL:-90,shoulderR:-90,elbowL:80,elbowR:0}),
+    ex("Step Down controlado","3×10","Parado sobre un escalón, bajá lentamente la pierna libre hasta rozar el piso y volvé sin perder el control de la rodilla.","stand",
+      Object.assign({},ST,{hipL:0,kneeL:15,hipR:5,kneeR:20,pelvisY:178}),
+      Object.assign({},ST,{hipL:0,kneeL:15,hipR:35,kneeR:15,pelvisY:200}))
+  ]}]},
+  { title:"Stretching completo", type:"text", items:["Pectorales","Dorsales","Trapecios","Deltoides","Flexores de cadera","Aductores","Glúteos","Piriforme","Cuádriceps","Isquios","Gemelos","Sóleo"], note:"45s cada uno — diagramas en Lunes y Martes" }
+]},
+
+{key:"domingo", label:"Domingo", num:"07", sub:"Recuperación activa", sections:[
+  { title:"Caminata", type:"text", items:["30-45 minutos"] },
+  { title:"Movilidad suave", type:"text", items:["90/90 ×10 — ver Martes","Cat-Camel ×10 — ver Lunes","Hip CARs ×5 — ver Martes","Wall Slides ×10 — ver Lunes","Liberación plantar — ver Sábado"] },
+  { title:"Stretching", type:"text", items:["Cuerpo completo · 15 min"] }
+]},
+
+{key:"diaria", label:"Diaria", num:"+", sub:"Rutina opcional (10-15 min)", sections:[
+  { title:"Al levantarte o antes de entrenar", type:"text", items:["Cat-Camel ×10 — ver Lunes","Rotaciones torácicas ×10 — ver Lunes","90/90 ×10 — ver Martes","Hip CARs ×5 — ver Martes","Knee to Wall ×10 — ver Martes","Short Foot ×10 — ver Sábado","Toe Yoga ×10 — ver Sábado","Tibial Raises ×15 — ver Sábado","Elevaciones de talón ×15 — ver Sábado","Equilibrio en un pie ×30s — ver Sábado"] }
+]}
+];
+
+/* ============ Render ============ */
+let CHECK_ID = 0;
+function exerciseCard(e, dayKey){
+  const id = `${dayKey}_${CHECK_ID++}`;
+  return `<div class="exrow" data-id="${id}">
+    <label class="checkwrap"><input type="checkbox" class="check" data-id="${id}"></label>
+    <details class="ex"><summary><span class="name">${e.name}</span>
+      <span class="right"><span class="sets mono">${e.sets}</span><span class="chev">▾</span></span></summary>
+      <div class="body"><p class="tech">${e.tech}</p></div></details>
+  </div>`;
+}
+function textBlock(sec, dayKey){
+  const note = sec.note ? `<div class="dur" style="margin-bottom:6px;">${sec.note}</div>` : "";
+  const items = sec.items.map(i=>{
+    const id = `${dayKey}_${CHECK_ID++}`;
+    let a=i, b="";
+    if(i.includes("·")){ [a,b]=i.split("·"); }
+    return `<li data-id="${id}"><label class="checkwrap" style="width:34px;"><input type="checkbox" class="check" data-id="${id}"></label>
+      <span class="txt"><span>${a.trim()}</span><span class="dur">${b.trim()}</span></span></li>`;
+  }).join("");
+  return `<div class="block"><h3>${sec.title}${sec.dur?` <span class="cat">${sec.dur}</span>`:""}</h3>${note}<ul class="plain">${items}</ul></div>`;
+}
+function groupsBlock(sec, dayKey){
+  const groups = sec.groups.map(g=>`<div class="subgroup"><div class="label">${g.label}</div>${g.items.map(e=>exerciseCard(e,dayKey)).join("")}</div>`).join("");
+  return `<div class="block"><h3>${sec.title}</h3>${groups}</div>`;
+}
+function infoPage(){
+  return `<div class="daytitle"><h2>Info</h2><div class="sub">Objetivos y reglas generales</div></div>
+    <div class="block">
+      <div class="infobox"><h3>Objetivos</h3><ul>
+        <li>Hipertrofia</li><li>Mejorar la capacidad cardiovascular</li><li>Mejorar movilidad y flexibilidad</li>
+        <li>Fortalecer pies y caderas</li><li>Minimizar el riesgo de agravar la hernia inguinal</li>
+        <li>Reducir la probabilidad de fascitis plantar</li></ul></div>
+      <div class="infobox"><h3>Intensidad</h3>
+        <p>Trabajar a RIR 1-3. No contener la respiración — exhalar durante el esfuerzo. Descansar 60-90 segundos entre series.</p>
+        <h3 style="margin-top:14px;">Progresión</h3>
+        <p>Cuando completes todas las series en el máximo del rango de repeticiones con buena técnica, aumentá el peso un 2,5-5%.</p></div>
+      <div class="infobox"><h3>Volumen semanal aproximado</h3><table class="voltable">
+        <tr><td>Pecho</td><td>12 series</td></tr><tr><td>Espalda</td><td>12 series</td></tr>
+        <tr><td>Hombros</td><td>12 series</td></tr><tr><td>Bíceps</td><td>6 series</td></tr>
+        <tr><td>Tríceps</td><td>6 series</td></tr><tr><td>Cuádriceps</td><td>12-14 series</td></tr>
+        <tr><td>Isquiotibiales</td><td>9-12 series</td></tr><tr><td>Glúteos</td><td>10-12 series</td></tr>
+        <tr><td>Gemelos</td><td>8 series</td></tr><tr><td>Core</td><td>6 series</td></tr>
+        <tr><td>Cardio</td><td>130-150 min</td></tr><tr><td>Movilidad</td><td>5-6 días</td></tr>
+        <tr><td>Stretching</td><td>5-6 días</td></tr><tr><td>Trabajo de pies</td><td>2-3 días</td></tr></table></div>
+      <div class="infobox"><h3>Sobre las marcas</h3>
+        <p>Tocá el cuadrado para marcar un ejercicio como completado. Las marcas se guardan en este teléfono y se reinician automáticamente cada semana (lunes). Podés reiniciar el día actual a mano con el botón "Reiniciar día".</p></div>
+    </div>`;
+}
+function renderDay(day){
+  if(day.info) return infoPage();
+  const sections = day.sections.map(sec => sec.type==="text" ? textBlock(sec, day.key) : groupsBlock(sec, day.key)).join("");
+  return `<div class="daytitle"><h2>${day.label}</h2><div class="sub">${day.sub}</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+      <div class="progress" id="prog-${day.key}"></div>
+      <button class="resetbtn" data-reset="${day.key}">Reiniciar día</button>
+    </div></div>${sections}`;
+}
+
+/* ---- Persistencia (localStorage, con reinicio semanal automático) ---- */
+const STORE_KEY = "rutina_checks_v1";
+const WEEK_KEY = "rutina_week_v1";
+function mondayOf(d){
+  d = new Date(d);
+  const day = (d.getDay()+6)%7;
+  d.setDate(d.getDate()-day);
+  d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+function loadChecks(){
+  const thisMonday = mondayOf(new Date());
+  if(localStorage.getItem(WEEK_KEY) !== thisMonday){
+    localStorage.setItem(STORE_KEY, "{}");
+    localStorage.setItem(WEEK_KEY, thisMonday);
+  }
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); }catch(e){ return {}; }
+}
+let checks = {};
+function saveChecks(){ localStorage.setItem(STORE_KEY, JSON.stringify(checks)); }
+
+function updateProgress(dayKey){
+  const section = document.getElementById("day-"+dayKey);
+  if(!section) return;
+  const boxes = section.querySelectorAll("input.check");
+  const total = boxes.length;
+  const done = [...boxes].filter(b=>b.checked).length;
+  const el = document.getElementById("prog-"+dayKey);
+  if(el) el.innerHTML = total ? `<b>${done}</b>/${total} completados` : "";
+}
+
+function applyChecksToDOM(){
+  document.querySelectorAll("input.check").forEach(box=>{
+    const id = box.dataset.id;
+    box.checked = !!checks[id];
+    const row = box.closest(".exrow") || box.closest("li");
+    if(row) row.classList.toggle("done", box.checked);
+  });
+  DAYS.forEach(d => { if(!d.info) updateProgress(d.key); });
+}
+
+function init(){
+  const nav = document.getElementById("dayNav");
+  const main = document.getElementById("main");
+  DAYS.forEach((day, idx) => {
+    const btn = document.createElement("button");
+    btn.innerHTML = `<span class="n">${day.num}</span>${day.label}`;
+    btn.dataset.key = day.key;
+    if(idx===0) btn.classList.add("active");
+    btn.addEventListener("click", () => selectDay(day.key));
+    nav.appendChild(btn);
+    const section = document.createElement("section");
+    section.className = "day" + (idx===0 ? " active" : "");
+    section.id = "day-" + day.key;
+    section.innerHTML = renderDay(day);
+    main.appendChild(section);
+  });
+  function selectDay(key){
+    document.querySelectorAll("nav.days button").forEach(b => b.classList.toggle("active", b.dataset.key===key));
+    document.querySelectorAll("section.day").forEach(s => s.classList.toggle("active", s.id==="day-"+key));
+    window.scrollTo({top:0, behavior:"instant"});
+  }
+
+  checks = loadChecks();
+  applyChecksToDOM();
+
+  main.addEventListener("change", (e) => {
+    if(!e.target.classList.contains("check")) return;
+    const id = e.target.dataset.id;
+    checks[id] = e.target.checked;
+    saveChecks();
+    const row = e.target.closest(".exrow") || e.target.closest("li");
+    if(row) row.classList.toggle("done", e.target.checked);
+    const dayKey = id.split("_")[0];
+    updateProgress(dayKey);
+  });
+
+  main.addEventListener("click", (e) => {
+    const btn = e.target.closest(".resetbtn");
+    if(!btn) return;
+    const dayKey = btn.dataset.reset;
+    const section = document.getElementById("day-"+dayKey);
+    section.querySelectorAll("input.check").forEach(box=>{
+      checks[box.dataset.id] = false;
+      box.checked = false;
+      const row = box.closest(".exrow") || box.closest("li");
+      if(row) row.classList.remove("done");
+    });
+    saveChecks();
+    updateProgress(dayKey);
+  });
+}
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
